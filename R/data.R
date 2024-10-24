@@ -42,3 +42,20 @@ load_city_circle_data <- function() {
   return(parsed_tram_data)
 }
 
+load_landmarks_data <- function() {
+  # Load the CSV file
+  landmarks_data <- read.csv("../dataset/landmarks-and-places-of-interest-including-schools-theatres-health-services-spor.csv")
+  
+  # Split the "Co-ordinates" column to extract latitude and longitude
+  landmarks_data <- landmarks_data %>%
+    mutate(
+      lat = as.numeric(sub(",.*", "", Co.ordinates)),  # Extract latitude
+      lng = as.numeric(sub(".*, ", "", Co.ordinates))  # Extract longitude
+    ) %>%
+    # Select relevant columns
+    select(Theme, Sub.Theme, Feature.Name, lat, lng) %>%
+    # Filter landmarks within the specified bounding box (lat/lng)
+    filter(lat >= -37.834256, lat <= -37.799947, lng >= 144.935655, lng <= 144.987276)
+  
+  return(landmarks_data)
+}
