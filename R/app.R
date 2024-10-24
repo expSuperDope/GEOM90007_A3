@@ -1,3 +1,5 @@
+source("./data.R")
+
 source("./map.R")
 
 source("./ui.R")
