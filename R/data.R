@@ -16,46 +16,29 @@ load_bus_data <- function() {
   return(bus_data)  # Return the processed bus stop data
 }
 
-# Load and parse tram track data
-load_tram_data <- function() {
-  tram_data <- read.csv("../dataset/tram-tracks.csv")
+load_city_circle_data <- function() {
+  # Load the CSV file
+  tram_data <- read.csv("../dataset/city-circle-tram-stops.csv")
   
-  # Function to parse the Geo Shape field and handle nested JSON data
+  # Function to parse Geo Shape and extract coordinates
   parse_geo_shape <- function(geo_shape) {
     json_data <- fromJSON(geo_shape)
     
-    # Check if the "coordinates" field exists
-    if ("coordinates" %in% names(json_data)) {
-      coordinates <- json_data$coordinates
-      
-      # Handle MultiPolygon nested structure
-      all_coords <- lapply(coordinates, function(polygon) {
-        lapply(polygon, function(ring) {
-          # Extract the coordinates from each polygon ring
-          coords <- data.frame(lng = sapply(ring, function(pt) pt[1]),
-                               lat = sapply(ring, function(pt) pt[2]))
-          
-          # Filter out invalid coordinate points (latitude/longitude should not be NA and must be within valid ranges)
-          valid_coords <- coords %>%
-            filter(!is.na(lng) & !is.na(lat) & lat >= -90 & lat <= 90 & lng >= -180 & lng <= 180)
-          
-          return(valid_coords)
-        })
-      })
-      
-      # Combine coordinates from all polygons
-      return(bind_rows(unlist(all_coords, recursive = FALSE)))
-    } else {
-      stop("No 'coordinates' field found in Geo Shape data")
-    }
+    # Extract the coordinates from Geo Shape
+    coordinates <- json_data$coordinates
+    return(data.frame(lng = coordinates[1], lat = coordinates[2]))
   }
   
-  # Parse Geo Shape for the entire dataset
-  parsed_tram_data <- lapply(tram_data$Geo.Shape, parse_geo_shape)
+  # Parse the Geo Shape field to extract longitude and latitude
+  parsed_tram_data <- tram_data %>%
+    rowwise() %>%
+    mutate(
+      geo_coordinates = list(parse_geo_shape(Geo.Shape)),
+      lng = geo_coordinates$lng,
+      lat = geo_coordinates$lat
+    ) %>%
+    select(name, lng, lat, stop_no)  # Select relevant fields: name, lng, lat, and stop number
   
-  # Combine all parsed data into a data frame
-  parsed_tram_data_df <- bind_rows(parsed_tram_data, .id = "track_id")
-  
-  return(parsed_tram_data_df)  # Return the parsed tram track data
+  return(parsed_tram_data)
 }
 

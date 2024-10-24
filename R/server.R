@@ -6,12 +6,14 @@ server <- function(input, output, session) {
   
   bus_data <- load_bus_data()
   
-  #tram_data <- load_tram_data()
-  
   print(bus_data)
+  
+  tram_data <- load_city_circle_data()
+  
+  print(tram_data)
   
   output$map <- renderLeaflet({
     # Print the data to check if it's being passed to the map_renderer
-    map_bus(bus_data)  # Render the map using the processed bus data
+    map_combined(bus_data,tram_data)  # Render the map using the processed bus data
   })
 }
